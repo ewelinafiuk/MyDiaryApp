@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import { categories, events, icons } from '../constants/constants';
+import { icons } from '../constants/constants';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,9 +16,6 @@ import {
 import {
   randomId,
 } from '@mui/x-data-grid-generator';
-import MyTimeline from './timeline';
-import CategoriesGrid  from './categories-grid';
-
   
 function EditToolbar(props) {
     const { setRows, setRowModesModel } = props;
@@ -41,9 +38,7 @@ function EditToolbar(props) {
     );
   }
 
-function MyDataGrid() {
-    const [rows, setRows] = React.useState(events);
-    const [categoriesRows, setCategoriesRows]= React.useState(categories);
+function MyDataGrid({rows, setRows, categoriesRows}) {
     const [rowModesModel, setRowModesModel] = React.useState({});
   
     const handleRowEditStop = (params, event) => {
@@ -77,6 +72,10 @@ function MyDataGrid() {
     };
   
     const processRowUpdate = (newRow) => {
+      if (typeof(newRow?.icon) !== typeof('')) {
+        const iconName = icons.find(i => i.value === newRow.icon)?.label
+        newRow = {...newRow, icon: iconName}
+      }
       const updatedRow = { ...newRow, isNew: false };
       setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
       return updatedRow;
@@ -95,7 +94,7 @@ function MyDataGrid() {
         { field: 'icon', 
           headerName: 'Icon',  
           width: 120,
-          renderCell: (params) => {return params.value},
+          renderCell: (params) => {return params?.value},
           valueGetter: (params) => {return icons.find(i => i.label === params.value)?.value},
           editable: true, 
           type: 'singleSelect', 
@@ -151,7 +150,6 @@ function MyDataGrid() {
 
     return (
         <div>
-            <MyTimeline categories={categoriesRows} events={rows.slice().sort((r1, r2) => !!r1.startDate ? r1.startDate > r2.startDate : true)} />
             <div style={{ height: 'fit-content', marginLeft: 100, marginRight: 100, marginTop: 50, backgroundColor: 'white'}}>
             <DataGrid 
                 editMode="row"
@@ -169,7 +167,6 @@ function MyDataGrid() {
                 columns={columns} 
             />
             </div>
-            <CategoriesGrid categories={categoriesRows} setCategories={setCategoriesRows}/>
         </div>
         
     )
