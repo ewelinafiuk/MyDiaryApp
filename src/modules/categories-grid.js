@@ -15,6 +15,7 @@ import {
 import {
   randomId,
 } from '@mui/x-data-grid-generator';
+import {colors} from '../constants/constants'
 
 
 function EditToolbar(props) {
@@ -84,7 +85,8 @@ function CategoriesGrid({categories, setCategories}) {
       
     const columns = [
         { field: 'name', headerName: 'Name', width: 150, editable: true},
-        { field: 'color', headerName: 'Color', width: 150, editable: true, renderCell: (props)  => {
+        { field: 'color', headerName: 'Color', width: 150, editable: true, valueOptions: colors.map(c => c), type: 'singleSelect', 
+        renderCell: (props)  => {
             return <div style={{width: '100%', height: '100%', backgroundColor: props.value}} />
         }},
         {

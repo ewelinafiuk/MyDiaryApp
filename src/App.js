@@ -11,7 +11,7 @@ function App() {
   const [categoriesRows, setCategoriesRows]= useState(categories);
 
   const sortEvents = () => {
-    return eventRows.slice().sort((r1, r2) => !!r1.startDate ? moment(r1.startDate).isBefore(moment(r2.startDate)) : true)
+    return eventRows.slice().filter(e => !e.isNew).sort((r1, r2) => !!r1.startDate ? moment(r1.startDate).isBefore(moment(r2.startDate)) : true)
   }
 
   return (

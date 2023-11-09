@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, {useState} from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { icons } from '../constants/constants';
 import Button from '@mui/material/Button';
@@ -11,18 +11,20 @@ import {
   GridRowModes,
   GridToolbarContainer,
   GridActionsCellItem,
-  GridRowEditStopReasons,
+  GridRowEditStopReasons
 } from '@mui/x-data-grid';
 import {
   randomId,
 } from '@mui/x-data-grid-generator';
-  
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+
 function EditToolbar(props) {
     const { setRows, setRowModesModel } = props;
 
     const handleClick = () => {
       const id = randomId();
-      setRows((oldRows) => [...oldRows, { id, name: '', description: '', isNew: true }]);
+      setRows((oldRows) => [...oldRows, { id, name: '', description: '', startDate: new Date(), endDate: new Date(), isNew: true }]);
       setRowModesModel((oldModel) => ({
         ...oldModel,
         [id]: { mode: GridRowModes.Edit, fieldToFocus: 'name' },
@@ -39,17 +41,27 @@ function EditToolbar(props) {
   }
 
 function MyDataGrid({rows, setRows, categoriesRows}) {
-    const [rowModesModel, setRowModesModel] = React.useState({});
+    const [rowModesModel, setRowModesModel] = useState({});
+    const [snackbar, setSnackbar] = useState()
   
     const handleRowEditStop = (params, event) => {
       if (params.reason === GridRowEditStopReasons.rowFocusOut) {
         event.defaultMuiPrevented = true;
+        if (!validateRow(params.row)){
+          setRows(rows.filter((row) => row.id !== params.row.id));
+        }
       }
     };
   
     const handleEditClick = (id) => () => {
       setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
     };
+
+    const validateRow = (row) => {
+      const notEpmty = !!row.name && !!row.description && !!row.startDate && !!row.endDate && !!row.categoryName
+      const validDate = new Date(row.startDate) < new Date(row.endDate)
+      return notEpmty && validDate
+    }
   
     const handleSaveClick = (id) => () => {
       setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
@@ -77,19 +89,27 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
         newRow = {...newRow, icon: iconName}
       }
       const updatedRow = { ...newRow, isNew: false };
-      setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
-      return updatedRow;
+      if (validateRow(updatedRow)) {
+        setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+        return updatedRow;
+      }
+      else {
+        setSnackbar({ children: 'To save insert all required data and make sure end date is greater than start date!', severity: 'error' })
+      }
     };
   
     const handleRowModesModelChange = (newRowModesModel) => {
       setRowModesModel(newRowModesModel);
     };
   
+    const handleCloseSnackbar = () => setSnackbar(null);
+
     const columns = [
         { field: 'name', headerName: 'Name', width: 200, editable: true},
         { field: 'description', headerName: 'Description',  width: 300, editable: true },
         { field: 'startDate', headerName: 'Start Date', valueGetter: ({ value }) => new Date(value), type: 'date', width: 150, editable: true},
-        { field: 'endDate', headerName: 'End Date', type: 'date', valueGetter: ({ value }) => new Date(value), width: 150, editable: true },
+        { field: 'endDate', 
+          headerName: 'End Date', type: 'date', valueGetter: ({ value }) => new Date(value), width: 150,  editable: true},
         { field: 'categoryName', headerName: 'Category', width: 120, editable: true, type: 'singleSelect', valueOptions: categoriesRows.map(c => c.name) },
         { field: 'icon', 
           headerName: 'Icon',  
@@ -164,8 +184,17 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
                     toolbar: { setRows, setRowModesModel },
                 }}
                 rows={rows} 
-                columns={columns} 
+                columns={columns}
             />
+            {!!snackbar && (
+              <Snackbar
+                open
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                onClose={handleCloseSnackbar}
+              >
+                <Alert {...snackbar} onClose={handleCloseSnackbar} />
+              </Snackbar>
+            )}
             </div>
         </div>
         
