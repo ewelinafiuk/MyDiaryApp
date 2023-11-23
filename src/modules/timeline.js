@@ -1,15 +1,21 @@
 import * as React from 'react';
 import { VerticalTimeline, VerticalTimelineElement }  from 'react-vertical-timeline-component';
 import 'react-vertical-timeline-component/style.min.css';
-import {icons} from '../constants/constants'
+import {icons} from '../constants/icons'
+
+const styles = {
+    container: {
+      marginTop: 50,
+    }
+  };
 
 function MyTimeline({events, categories}) {
     const formatDate = (date) => new Date(date).toLocaleDateString()
     return (
-        <div style={{marginTop: 50}}>
+        <div style={styles.container}>
         <VerticalTimeline>
             {events.map((event, idx) => {
-                const cat = categories.find(c => c.name === event.categoryName)
+                const cat = categories.find(c => c.id === event.categoryId)
                 const color = cat?.color ? cat.color : 'blue'
                 return (
                     <VerticalTimelineElement

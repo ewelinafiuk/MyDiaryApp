@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import { icons } from '../constants/constants';
+import { icons } from '../constants/icons';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,11 +20,11 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
 function EditToolbar(props) {
-    const { setRows, setRowModesModel } = props;
+    const { setRows, setRowModesModel, newRow } = props;
 
     const handleClick = () => {
       const id = randomId();
-      setRows((oldRows) => [...oldRows, { id, name: '', description: '', startDate: new Date(), endDate: new Date(), isNew: true }]);
+      setRows((oldRows) => [...oldRows, { id, ...newRow, isNew: true }]);
       setRowModesModel((oldModel) => ({
         ...oldModel,
         [id]: { mode: GridRowModes.Edit, fieldToFocus: 'name' },
@@ -34,20 +34,20 @@ function EditToolbar(props) {
     return (
       <GridToolbarContainer>
         <Button color="primary" startIcon={<AddIcon />} onClick={handleClick}>
-          Add new event
+          Add new
         </Button>
       </GridToolbarContainer>
     );
   }
 
-function MyDataGrid({rows, setRows, categoriesRows}) {
+function MyDataGrid({rows, setRows, columns, validation, validationErrorText, onDeleteValidation, newRow}) {
     const [rowModesModel, setRowModesModel] = useState({});
     const [snackbar, setSnackbar] = useState()
   
     const handleRowEditStop = (params, event) => {
       if (params.reason === GridRowEditStopReasons.rowFocusOut) {
         event.defaultMuiPrevented = true;
-        if (!validateRow(params.row)){
+        if (!validation(params.row)){
           setRows(rows.filter((row) => row.id !== params.row.id));
         }
       }
@@ -57,18 +57,17 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
       setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
     };
 
-    const validateRow = (row) => {
-      const notEpmty = !!row.name && !!row.description && !!row.startDate && !!row.endDate && !!row.categoryName
-      const validDate = new Date(row.startDate) < new Date(row.endDate)
-      return notEpmty && validDate
-    }
-  
     const handleSaveClick = (id) => () => {
       setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
     };
   
     const handleDeleteClick = (id) => () => {
-      setRows(rows.filter((row) => row.id !== id));
+      if (onDeleteValidation && onDeleteValidation(id)) {
+        setSnackbar({ children: 'Cannot delete this row', severity: 'error' })
+      }
+      else {
+        setRows(rows.filter((row) => row.id !== id));
+      }
     };
   
     const handleCancelClick = (id) => () => {
@@ -77,9 +76,9 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
         [id]: { mode: GridRowModes.View, ignoreModifications: true },
       });
   
-      const editedRow = rows.find((row) => row.id === id);
+      const editedRow = rows.find((row) => row.id === id)
       if (editedRow.isNew) {
-        setRows(rows.filter((row) => row.id !== id));
+        setRows(rows.filter((row) => row.id !== id))
       }
     };
   
@@ -88,38 +87,24 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
         const iconName = icons.find(i => i.value === newRow.icon)?.label
         newRow = {...newRow, icon: iconName}
       }
-      const updatedRow = { ...newRow, isNew: false };
-      if (validateRow(updatedRow)) {
-        setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+      const updatedRow = { ...newRow, isNew: false }
+      if (validation(updatedRow)) {
+        setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)))
         return updatedRow;
       }
       else {
-        setSnackbar({ children: 'To save insert all required data and make sure end date is greater than start date!', severity: 'error' })
+        setSnackbar({ children: validationErrorText, severity: 'error' })
       }
     };
   
     const handleRowModesModelChange = (newRowModesModel) => {
-      setRowModesModel(newRowModesModel);
+      setRowModesModel(newRowModesModel)
     };
   
     const handleCloseSnackbar = () => setSnackbar(null);
 
-    const columns = [
-        { field: 'name', headerName: 'Name', width: 200, editable: true},
-        { field: 'description', headerName: 'Description',  width: 300, editable: true },
-        { field: 'startDate', headerName: 'Start Date', valueGetter: ({ value }) => new Date(value), type: 'date', width: 150, editable: true},
-        { field: 'endDate', 
-          headerName: 'End Date', type: 'date', valueGetter: ({ value }) => new Date(value), width: 150,  editable: true},
-        { field: 'categoryName', headerName: 'Category', width: 120, editable: true, type: 'singleSelect', valueOptions: categoriesRows.map(c => c.name) },
-        { field: 'icon', 
-          headerName: 'Icon',  
-          width: 120,
-          renderCell: (params) => {return params?.value},
-          valueGetter: (params) => {return icons.find(i => i.label === params.value)?.value},
-          editable: true, 
-          type: 'singleSelect', 
-          valueOptions: icons.map(c => c.label)
-        },
+    const allColumns = [
+        ...columns,
         {
         field: 'actions',
         type: 'actions',
@@ -127,7 +112,7 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
         width: 80,
         cellClassName: 'actions',
         getActions: ({ id }) => {
-          const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+          const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit
   
           if (isInEditMode) {
             return [
@@ -170,7 +155,6 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
 
     return (
         <div>
-            <div style={{ height: 'fit-content', marginLeft: 100, marginRight: 100, marginTop: 50, backgroundColor: 'white'}}>
             <DataGrid 
                 editMode="row"
                 rowModesModel={rowModesModel}
@@ -184,7 +168,7 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
                     toolbar: { setRows, setRowModesModel },
                 }}
                 rows={rows} 
-                columns={columns}
+                columns={allColumns}
             />
             {!!snackbar && (
               <Snackbar
@@ -195,9 +179,7 @@ function MyDataGrid({rows, setRows, categoriesRows}) {
                 <Alert {...snackbar} onClose={handleCloseSnackbar} />
               </Snackbar>
             )}
-            </div>
         </div>
-        
     )
   }
   

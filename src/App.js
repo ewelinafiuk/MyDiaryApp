@@ -1,10 +1,32 @@
 import React, {useState} from 'react';
 import moment from 'moment';
-import MyDataGrid from './modules/datagrid';
+import EventsGrid from './modules/events-grid';
 import MyTimeline from './modules/timeline';
 import CategoriesGrid from './modules/categories-grid';
-import { events, categories } from './constants/constants';
-import './App.css';
+import { events } from './constants/events';
+import { categories } from './constants/categories';
+
+const styles = {
+  app: {
+    textAlign: 'center',
+    backgroundColor: '#9a9b9e'
+  },
+  appHeader: {
+    backgroundColor: '#282c34',
+    height: 100,
+    display: 'flex',
+    flexDirection: 'column',
+    marginBottom: 50,
+    fontSize: 30,
+    justifyContent: 'center',
+    color: 'white',
+    alignItems: 'center'
+  },
+  footer: {
+    height: 50
+  }
+};
+
 
 function App() {
   const [eventRows, setEventRows] = useState(events);
@@ -15,14 +37,14 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header className="App-header">
+    <div style={styles.app}>
+      <header style={styles.appHeader}>
         My diary
       </header>
       <MyTimeline categories={categoriesRows} events={sortEvents()} />
-      <MyDataGrid rows={eventRows} setRows={setEventRows} categoriesRows={categoriesRows}/>
-      <CategoriesGrid categories={categoriesRows} setCategories={setCategoriesRows}/>
-      <div style={{height: 50}}></div>
+      <EventsGrid rows={eventRows} setRows={setEventRows} categoriesRows={categoriesRows}/>
+      <CategoriesGrid categories={categoriesRows} setCategories={setCategoriesRows} events={eventRows}/>
+      <div style={styles.footer}></div>
     </div>
   );
 }
